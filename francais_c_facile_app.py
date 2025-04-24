@@ -14,10 +14,7 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage, AIMessage, SystemMessage
 import uuid
-import streamlit as st
 
-# 커버 이미지
-st.image("https://raw.githubusercontent.com/nohemie00/francais/main/assets/FRANCAIS.png", use_column_width=True)
 
 # Streamlit 페이지 설정
 st.set_page_config(
@@ -25,6 +22,9 @@ st.set_page_config(
     page_icon="🇫🇷",
     layout="wide"
 )
+
+# 커버 이미지
+st.image("https://raw.githubusercontent.com/nohemie00/francais/main/assets/FRANCAIS.png", use_container_width=True)
 
 # 사이드바에 제목 추가
 with st.sidebar:
