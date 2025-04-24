@@ -25,7 +25,7 @@ st.set_page_config(
 # 사이드바에 제목 추가
 st.sidebar.title("Prof. Francais 🇫🇷")
 st.sidebar.markdown("""
-쉽고 재미있게 프랑스어를 배우도록 도와주는 Prof.Noy에요.
+쉽고 재미있게 프랑스어를 배우도록 도와주는 Noy 선생님이에요.
 - 문법 교정
 - 발음 설명
 - 회화 연습
@@ -148,7 +148,7 @@ qa_chain = ConversationalRetrievalChain.from_llm(
 )
 
 # 메인 제목
-st.title("프랑스어 선생님 봇 🇫🇷")
+st.title("Noy의 우당탕탕 불어 타임 <feat.고급진> 🇫🇷")
 
 # 채팅 인터페이스
 for message in st.session_state.messages:
@@ -156,7 +156,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # 사용자 입력 처리
-if prompt := st.chat_input("질문을 입력하세요"):
+if prompt := st.chat_input("편하게 질문해. 나 한국어도 잘해."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
