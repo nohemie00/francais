@@ -148,7 +148,7 @@ qa_chain = ConversationalRetrievalChain.from_llm(
 )
 
 # 메인 제목
-st.title("Noy의 우당탕탕 불어 타임 <feat.고급진> 🇫🇷")
+st.title("Noy와 함께 우아탕탕 프랑스어 🇫🇷")
 
 # 채팅 인터페이스
 for message in st.session_state.messages:
@@ -169,7 +169,7 @@ if prompt := st.chat_input("편하게 질문해. 나 한국어도 잘해."):
             message_placeholder.markdown(answer)
             st.session_state.messages.append({"role": "assistant", "content": answer})
         except Exception as e:
-            error_message = f"죄송합니다. 오류가 발생했습니다: {str(e)}"
+            error_message = f"오류가 났어. 잠시만!: {str(e)}"
             message_placeholder.error(error_message)
             st.session_state.messages.append({"role": "assistant", "content": error_message})
 
