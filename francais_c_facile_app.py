@@ -14,6 +14,10 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage, AIMessage, SystemMessage
 import uuid
+import streamlit as st
+
+# 커버 이미지
+st.image("https://raw.githubusercontent.com/nohemie00/francais/main/assets/FRANCAIS.png", use_column_width=True)
 
 # Streamlit 페이지 설정
 st.set_page_config(
@@ -23,15 +27,19 @@ st.set_page_config(
 )
 
 # 사이드바에 제목 추가
-st.sidebar.title("Prof. Francais 🇫🇷")
-st.sidebar.markdown("""
-쉽고 재미있게 프랑스어를 배우도록 도와주는 Noy 선생님이에요.
-- 문법 교정
-- 발음 설명
-- 회화 연습
-- 문화 설명
-- 고급 불어
-""")
+with st.sidebar:
+    st.markdown("<h2 style='color:#4F8BF9;'>🧑‍🏫 Prof. Francais FR</h2>", unsafe_allow_html=True)
+    st.markdown("쉽고 재미있게 프랑스어를 배우도록 도와주는 Noy 선생님이에요.")
+    st.markdown("""
+    - ✅ 문법 교정  
+    - ✅ 발음 설명  
+    - ✅ 회화 연습  
+    - ✅ 문화 설명  
+    - ✅ 고급 불어
+    """)
+    if st.button("💬 대화 초기화"):
+        st.session_state.messages = []
+
 
 # 환경 변수 설정
 if 'OPENAI_API_KEY' not in st.secrets:
