@@ -58,11 +58,25 @@ st.markdown("""
 # 커버 이미지
 st.image("https://raw.githubusercontent.com/nohemie00/francais/main/assets/FRANCAIS_.png", use_container_width=True)
 
-# 사이드바에 제목 추가
+# 사이드바 문장 색상만 따로 바꾸는 CSS 삽입
+st.markdown("""
+    <style>
+    /* 사이드바 문장 스타일 */
+    .css-1d391kg p.sidebar-highlight {
+        color: #B8D8FF !important;
+        font-size: 16px;
+        line-height: 1.6;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# 사이드바 내용
 with st.sidebar:
     st.markdown("<h2 style='color:#4F8BF9;'>🧑‍🏫 Prof. Francais FR</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#B8D8FF !important;'>쉽고 재미있게 프랑스어를 배우도록 도와주는 Noy 선생님이에요.</p>", unsafe_allow_html=True)
-
+    st.markdown(
+        "<p class='sidebar-highlight'>쉽고 재미있게 프랑스어를 배우도록 도와주는 Noy 선생님이에요.</p>",
+        unsafe_allow_html=True
+    )
     st.markdown("""
     - ✅ 문법 교정  
     - ✅ 발음 설명  
@@ -70,6 +84,7 @@ with st.sidebar:
     - ✅ 문화 설명  
     - ✅ 고급 불어
     """)
+
     if st.button("💬 대화 초기화"):
         st.session_state.messages = []
 
