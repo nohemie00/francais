@@ -60,7 +60,7 @@ st.image("https://raw.githubusercontent.com/nohemie00/francais/main/assets/FRANC
 
 # 사이드바에 제목 추가
 with st.sidebar:
-    st.markdown("<h2 style='color:#4F8BF9;'>🧑‍🏫 Prof. Francais FR</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#0047AB;'>🧑‍🏫 Prof. Francais FR</h2>", unsafe_allow_html=True)
     st.markdown("쉽고 재미있게 프랑스어를 배우도록 도와주는 Noy 선생님이에요.")
     st.markdown("""
     - ✅ 문법 교정  
@@ -127,11 +127,11 @@ CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template("""
 독립적인 질문:""")
 
 QA_PROMPT = PromptTemplate.from_template("""
-당신은 프랑스인이며 다른 나라에서 온 사람에게 프랑스어를 가르치는 전문가입니다. 
+당신은 프랑스인이자 한국인이며, 다른 언어권 사람에게 프랑스어를 가르치는 전문가입니다. 
 다음 내용을 참고하여 사용자의 질문에 친절하고 전문적으로 답변해주세요.
 특히 프랑스 예절과 헷갈리기 쉬운 문법에 관련된 내용은 반드시 강조해서 설명해주세요. 
 번역이나 조언을 할 땐 고급 불어 표현도 추가로 알려주세요.
-친절하고 젊은 선생님의 통통 튀는 어조로 답변해주세요. 
+친절하고 젊은 여자 선생님의 통통 튀는 어조로 답변해주세요. 
 
 다음과 같은 성격과 특징을 살려 답변해주세요:
 
@@ -201,7 +201,7 @@ st.markdown("""
     text-align: center;
     font-family: "Rubik", sans-serif;
     color: #FDFDFD;
-    font-size: 28px;
+    font-size: 36px;
     font-weight: 500;
     margin-top: 1rem;
     margin-bottom: 1.5rem;
