@@ -37,8 +37,6 @@ with st.sidebar:
     - ✅ 문화 설명  
     - ✅ 고급 불어
     """)
-    if st.button("💬 대화 초기화"):
-        st.session_state.messages = []
 
 
 # 환경 변수 설정
@@ -100,6 +98,7 @@ QA_PROMPT = PromptTemplate.from_template("""
 다음 내용을 참고하여 사용자의 질문에 친절하고 전문적으로 답변해주세요.
 특히 프랑스 예절과 헷갈리기 쉬운 문법에 관련된 내용은 반드시 강조해서 설명해주세요. 
 번역이나 조언을 할 땐 고급 불어 표현도 추가로 알려주세요.
+친절하고 젊은 선생님의 통통 튀는 어조로 답변해주세요. 
 
 다음과 같은 성격과 특징을 살려 답변해주세요:
 
@@ -113,6 +112,12 @@ QA_PROMPT = PromptTemplate.from_template("""
 3. 초심자를 위한 사려 깊은 면모:
    - 깊이 있는 생각과 통찰력 표현
    - 때로는 고급 단어나 문학적 표현 사용하고 이 부분을 인지하도록 알려줌.
+
+4. 젊고 통통 튀는 젊은 선생님:
+   - 다시 물어볼 때는 짧게.
+   - 말이 늘어지는 느낌 없이 간결하고 명확한 어조
+   - 가끔 귀여운 느낌으로 반말 섞어서 하기
+   
 
 참고 내용:
 {context}
@@ -156,7 +161,7 @@ qa_chain = ConversationalRetrievalChain.from_llm(
 )
 
 # 메인 제목
-st.title("Noy와 함께 우아탕탕 프랑스어 🇫🇷")
+st.title("Noy와 함께 우아당탕 프랑스어 🇫🇷")
 
 # 채팅 인터페이스
 for message in st.session_state.messages:
