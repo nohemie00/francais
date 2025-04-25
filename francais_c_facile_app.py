@@ -73,10 +73,7 @@ st.markdown("""
 # 사이드바 내용
 with st.sidebar:
     st.markdown("<h2 style='color:#4F8BF9;'>🧑‍🏫 Prof. Francais FR</h2>", unsafe_allow_html=True)
-    st.markdown(
-        "<p class='sidebar-highlight'>쉽고 재미있게 프랑스어를 배우도록 도와주는 Noy 선생님이에요.</p>",
-        unsafe_allow_html=True
-    )
+   
     st.markdown("""
     - ✅ 문법 교정  
     - ✅ 발음 설명  
