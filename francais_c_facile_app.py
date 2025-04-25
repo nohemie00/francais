@@ -194,7 +194,21 @@ qa_chain = ConversationalRetrievalChain.from_llm(
 )
 
 # 메인 제목
-st.title("Noy와 함께 우아당탕 프랑스어 🇫🇷")
+st.markdown("""
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap" rel="stylesheet">
+
+<h2 style='
+    text-align: center;
+    font-family: "Rubik", sans-serif;
+    color: #FDFDFD;
+    font-size: 28px;
+    font-weight: 500;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+'>
+    Noy와 함께 우아당탕 프랑스어 🇫🇷
+</h2>
+""", unsafe_allow_html=True)
 
 # 채팅 인터페이스
 for message in st.session_state.messages:
