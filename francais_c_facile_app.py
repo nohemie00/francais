@@ -23,6 +23,38 @@ st.set_page_config(
     layout="wide"
 )
 
+# 스타일 커스터마이징 (배경 파랑 + 글자 흰색)
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #0047AB; /* 전체 배경 */
+        color: white;
+    }
+    .stMarkdown p, .stTextInput > div > div > input {
+        color: white !important;
+    }
+    .stTextInput > div > div {
+        background-color: #0055cc !important;
+    }
+    .stChatMessage {
+        background-color: #0055cc;
+        color: white;
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    .stChatInputContainer {
+        background-color: #003b7a;
+        padding: 1rem;
+        border-radius: 10px;
+    }
+    button[kind="primary"] {
+        background-color: #FF4B4B;
+        color: white;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # 커버 이미지
 st.image("https://raw.githubusercontent.com/nohemie00/francais/main/assets/FRANCAIS.png", use_container_width=True)
 
@@ -37,7 +69,8 @@ with st.sidebar:
     - ✅ 문화 설명  
     - ✅ 고급 불어
     """)
-
+    if st.button("💬 대화 초기화"):
+        st.session_state.messages = []
 
 # 환경 변수 설정
 if 'OPENAI_API_KEY' not in st.secrets:
@@ -186,8 +219,4 @@ if prompt := st.chat_input("편하게 질문해. 나 한국어도 잘해."):
             message_placeholder.error(error_message)
             st.session_state.messages.append({"role": "assistant", "content": error_message})
 
-# 대화 초기화 버튼
-if st.sidebar.button("대화 초기화"):
-    st.session_state.messages = []
-    memory.clear()
-    st.rerun() 
+
