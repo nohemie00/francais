@@ -61,8 +61,7 @@ st.image("https://raw.githubusercontent.com/nohemie00/francais/main/assets/FRANC
 # 사이드바에 제목 추가
 with st.sidebar:
     st.markdown("<h2 style='color:#4F8BF9;'>🧑‍🏫 Prof. Francais FR</h2>", unsafe_allow_html=True)
-    st.markdown(
-        "<p style='color:#B8D8FF; font-size: 16px;'>쉽고 재미있게 프랑스어를 배우도록 도와주는 Noy 선생님이에요.</p>",
+    st.markdown("<p style='color:#B8D8FF; font-size: 16px;'>쉽고 재미있게 프랑스어를 배우도록 도와주는 Noy 선생님이에요.</p>",
         unsafe_allow_html=True
     )
     st.markdown("""
