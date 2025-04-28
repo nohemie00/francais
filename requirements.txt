@@ -6,3 +6,4 @@ openai
 supabase
 pymupdf
 python-dotenv
+langchain-teddynote
