@@ -13,8 +13,10 @@ from supabase import create_client
 from langchain.chains import ConversationalRetrievalChain
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage, AIMessage, SystemMessage
+from langchain_community.retrievers import BM25Retriever
+from langchain_teddynote.retrievers import KiwiBM25Retriever
+from langchain.schema import Document
 import uuid
-
 
 # Streamlit 페이지 설정
 st.set_page_config(
@@ -27,7 +29,7 @@ st.set_page_config(
 st.markdown("""
     <style>
     .stApp {
-        background-color: #0047AB; /* 전체 배경 */
+        background-color: #0047AB;
         color: white;
     }
     .stMarkdown p, .stTextInput > div > div > input {
@@ -58,10 +60,9 @@ st.markdown("""
 # 커버 이미지
 st.image("https://raw.githubusercontent.com/nohemie00/francais/main/assets/FRANCAIS_.png", use_container_width=True)
 
-# 사이드바 문장 색상만 따로 바꾸는 CSS 삽입
+# 사이드바 문장 색상 커스터마이징
 st.markdown("""
     <style>
-    /* 사이드바 문장 스타일 */
     .css-1d391kg p.sidebar-highlight {
         color: #B8D8FF !important;
         font-size: 16px;
@@ -73,7 +74,6 @@ st.markdown("""
 # 사이드바 내용
 with st.sidebar:
     st.markdown("<h2 style='color:#4F8BF9;'>🧑‍🏫 Prof. Francais FR</h2>", unsafe_allow_html=True)
-   
     st.markdown("""
     - ✅ 문법 교정  
     - ✅ 발음 설명  
@@ -81,7 +81,6 @@ with st.sidebar:
     - ✅ 문화 설명  
     - ✅ 고급 불어
     """)
-
     if st.button("💬 대화 초기화"):
         st.session_state.messages = []
 
@@ -144,7 +143,7 @@ QA_PROMPT = PromptTemplate.from_template("""
 다음 내용을 참고하여 사용자의 질문에 친절하고 전문적으로 답변해주세요.
 특히 프랑스 예절과 헷갈리기 쉬운 문법에 관련된 내용은 반드시 강조해서 설명해주세요. 
 번역이나 조언을 할 땐 고급 불어 표현도 추가로 알려주세요.
-친절하고 젊은 여자 선생님의 통통 튀는 어조로 답변해주세요. 
+친절하고 젊은 여자 선생님의 통통 튀는 어조로 답변해주세요.
 
 다음과 같은 성격과 특징을 살려 답변해주세요:
 
@@ -172,17 +171,90 @@ QA_PROMPT = PromptTemplate.from_template("""
 
 답변:""")
 
-# 벡터 스토어 초기화
+# Supabase 데이터 읽기 및 BM25/키위BM25 인덱스 구축
 try:
-    vectorstore = SupabaseVectorStore(
-        client=supabase,
-        embedding=embeddings,
-        table_name="embeddings",
-        query_name="match_embeddings"
-    )
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+    resp = supabase.table("embeddings").select("content,metadata").execute()
+    docs = [Document(page_content=item["content"], metadata=item.get("metadata", {})) for item in resp.data]
+    texts = [d.page_content for d in docs]
 except Exception as e:
-    st.error(f'벡터 스토어 초기화 오류: {e}')
+    st.error(f'Supabase에서 데이터 불러오기 오류: {e}')
+    st.stop()
+
+# 강화된 Supabase 벡터 검색기
+class EnhancedSupabaseRetriever:
+    def __init__(self, client, embeddings, table_name="embeddings", query_name="match_embeddings", k=3):
+        self.client = client
+        self.embeddings = embeddings
+        self.table_name = table_name
+        self.query_name = query_name
+        self.k = k
+    
+    def invoke(self, query):
+        try:
+            query_embedding = self.embeddings.embed_query(query)
+            matches = self.client.rpc(
+                self.query_name,
+                {"query_embedding": query_embedding, "match_threshold": 0.5, "match_count": self.k}
+            ).execute()
+            
+            docs = []
+            if matches.data:
+                for match in matches.data:
+                    if 'content' in match and match['content']:
+                        metadata = match.get('metadata', {}) or {}
+                        metadata['similarity'] = float(match.get('similarity', 0))
+                        metadata['source'] = "Vector"
+                        docs.append(Document(page_content=match['content'], metadata=metadata))
+            return docs
+        except Exception as e:
+            return []
+    
+    def get_relevant_documents(self, query):
+        return self.invoke(query)
+
+# 강화된 하이브리드 검색기
+class EnhancedEnsembleRetriever:
+    def __init__(self, retrievers, weights=None, verbose=False):
+        self.retrievers = retrievers
+        if weights is None:
+            weights = [1.0 / len(retrievers) for _ in retrievers]
+        self.weights = weights
+        self.verbose = verbose
+        self.retriever_names = ["BM25", "KiwiBM25", "Vector"]
+    
+    def invoke(self, query):
+        all_docs = []
+        for i, retriever in enumerate(self.retrievers):
+            try:
+                docs = retriever.invoke(query)
+                for j, doc in enumerate(docs):
+                    if not doc.metadata:
+                        doc.metadata = {}
+                    doc.metadata["source"] = self.retriever_names[i]
+                    doc.metadata["score"] = 1.0 / (1.0 + j)
+                    all_docs.append(doc)
+            except:
+                continue
+        return sorted(all_docs, key=lambda d: d.metadata.get("score", 0), reverse=True)[:3]
+
+# 하이브리드 검색기 구성
+try:
+    vector_retriever = EnhancedSupabaseRetriever(
+        client=supabase,
+        embeddings=embeddings,
+        table_name="embeddings",
+        query_name="match_embeddings",
+        k=3
+    )
+    bm25 = BM25Retriever.from_texts(texts=texts, metadatas=[d.metadata for d in docs], k=3)
+    kiwi = KiwiBM25Retriever.from_texts(texts=texts, metadatas=[d.metadata for d in docs], k=3)
+    
+    hybrid_retriever = EnhancedEnsembleRetriever(
+        retrievers=[bm25, kiwi, vector_retriever],
+        weights=[0.2, 0.3, 0.8]
+    )
+except Exception as e:
+    st.error(f'하이브리드 검색기 초기화 오류: {e}')
     st.stop()
 
 # 대화 이력 초기화
@@ -199,7 +271,7 @@ memory = ConversationBufferMemory(
 # 대화형 검색 체인 생성
 qa_chain = ConversationalRetrievalChain.from_llm(
     llm=llm,
-    retriever=retriever,
+    retriever=hybrid_retriever,
     memory=memory,
     verbose=False,
     condense_question_prompt=CONDENSE_QUESTION_PROMPT,
@@ -245,5 +317,3 @@ if prompt := st.chat_input("편하게 질문해. 나 한국어도 잘해."):
             error_message = f"오류가 났어. 잠시만!: {str(e)}"
             message_placeholder.error(error_message)
             st.session_state.messages.append({"role": "assistant", "content": error_message})
-
-
