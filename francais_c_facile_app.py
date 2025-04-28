@@ -245,11 +245,11 @@ try:
         query_name="match_embeddings",
         k=3
     )
-hybrid_retriever = EnhancedEnsembleRetriever(
-    retrievers=[bm25, vector_retriever],
-    weights=[0.3, 0.7],
-    verbose=False
-)
+    hybrid_retriever = EnhancedEnsembleRetriever(
+        retrievers=[bm25, vector_retriever],
+        weights=[0.3, 0.7],
+        verbose=False
+    )
 except Exception as e:
     st.error(f'하이브리드 검색기 초기화 오류: {e}')
     st.stop()
