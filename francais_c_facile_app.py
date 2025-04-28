@@ -217,18 +217,10 @@ from typing import List, Any
 class EnhancedEnsembleRetriever(BaseRetriever):
     retrievers: List[Any]
     weights: List[float]
+    retriever_names: List[str] = ["BM25", "Vector"]
     verbose: bool = False
 
-    def __init__(self, retrievers, weights=None, verbose=False):
-        super().__init__()
-        self.retrievers = retrievers
-        if weights is None:
-            weights = [1.0 / len(retrievers) for _ in retrievers]
-        self.weights = weights
-        self.verbose = verbose
-        self.retriever_names = ["BM25", "Vector"]
-
-    def invoke(self, query):
+    def _get_relevant_documents(self, query: str) -> List[Document]:
         all_docs = []
         for i, retriever in enumerate(self.retrievers):
             try:
@@ -239,16 +231,9 @@ class EnhancedEnsembleRetriever(BaseRetriever):
                     doc.metadata["source"] = self.retriever_names[i]
                     doc.metadata["score"] = 1.0 / (1.0 + j)
                     all_docs.append(doc)
-            except:
+            except Exception:
                 continue
         return sorted(all_docs, key=lambda d: d.metadata.get("score", 0), reverse=True)[:3]
-
-    def _get_relevant_documents(self, query):
-        return self.invoke(query)
-
-    def get_relevant_documents(self, query):
-        return self.invoke(query)
-
 
 # --- 검색기 구성 ---
 try:
@@ -260,10 +245,11 @@ try:
         query_name="match_embeddings",
         k=3
     )
-    hybrid_retriever = EnhancedEnsembleRetriever(
-        retrievers=[bm25, vector_retriever],
-        weights=[0.3, 0.7]
-    )
+hybrid_retriever = EnhancedEnsembleRetriever(
+    retrievers=[bm25, vector_retriever],
+    weights=[0.3, 0.7],
+    verbose=False
+)
 except Exception as e:
     st.error(f'하이브리드 검색기 초기화 오류: {e}')
     st.stop()
