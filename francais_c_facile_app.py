@@ -74,11 +74,11 @@ st.markdown("""
 with st.sidebar:
     st.markdown("<h2 style='color:#4F8BF9;'>🧑‍🏫 Prof. Francais FR</h2>", unsafe_allow_html=True)
     st.markdown("""
-    ✅ 문법 교정  
-    ✅ 발음 설명  
-    ✅ 회화 연습  
-    ✅ 문화 설명  
-    ✅ 고급 표현
+    - 문법 교정  
+    - 발음 설명  
+    - 회화 연습  
+    - 문화 설명  
+    - 고급 표현
     """)
     if st.button("💬 대화 초기화"):
         st.session_state.messages = []
