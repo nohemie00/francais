@@ -171,16 +171,16 @@ QA_PROMPT = PromptTemplate.from_template("""
 
 답변:""")
 
-# Supabase 데이터 읽기 및 BM25/키위BM25 인덱스 구축
+# Supabase 데이터 불러오기
 try:
     resp = supabase.table("embeddings").select("content,metadata").execute()
     docs = [Document(page_content=item["content"], metadata=item.get("metadata", {})) for item in resp.data]
     texts = [d.page_content for d in docs]
 except Exception as e:
-    st.error(f'Supabase에서 데이터 불러오기 오류: {e}')
+    st.error(f'Supabase 데이터 불러오기 오류: {e}')
     st.stop()
 
-# 강화된 Supabase 벡터 검색기
+# Supabase 벡터 검색기
 class EnhancedSupabaseRetriever:
     def __init__(self, client, embeddings, table_name="embeddings", query_name="match_embeddings", k=3):
         self.client = client
@@ -188,7 +188,7 @@ class EnhancedSupabaseRetriever:
         self.table_name = table_name
         self.query_name = query_name
         self.k = k
-    
+
     def invoke(self, query):
         try:
             query_embedding = self.embeddings.embed_query(query)
@@ -196,7 +196,6 @@ class EnhancedSupabaseRetriever:
                 self.query_name,
                 {"query_embedding": query_embedding, "match_threshold": 0.5, "match_count": self.k}
             ).execute()
-            
             docs = []
             if matches.data:
                 for match in matches.data:
@@ -206,13 +205,13 @@ class EnhancedSupabaseRetriever:
                         metadata['source'] = "Vector"
                         docs.append(Document(page_content=match['content'], metadata=metadata))
             return docs
-        except Exception as e:
+        except:
             return []
-    
+
     def get_relevant_documents(self, query):
         return self.invoke(query)
 
-# 강화된 하이브리드 검색기
+# 하이브리드 검색기
 class EnhancedEnsembleRetriever:
     def __init__(self, retrievers, weights=None, verbose=False):
         self.retrievers = retrievers
@@ -220,8 +219,8 @@ class EnhancedEnsembleRetriever:
             weights = [1.0 / len(retrievers) for _ in retrievers]
         self.weights = weights
         self.verbose = verbose
-        self.retriever_names = ["BM25", "KiwiBM25", "Vector"]
-    
+        self.retriever_names = ["BM25", "Vector"]
+
     def invoke(self, query):
         all_docs = []
         for i, retriever in enumerate(self.retrievers):
@@ -237,8 +236,12 @@ class EnhancedEnsembleRetriever:
                 continue
         return sorted(all_docs, key=lambda d: d.metadata.get("score", 0), reverse=True)[:3]
 
-# 하이브리드 검색기 구성
+    def get_relevant_documents(self, query):
+        return self.invoke(query)
+
+# 검색기 구성
 try:
+    bm25 = BM25Retriever.from_texts(texts=texts, metadatas=[d.metadata for d in docs], k=3)
     vector_retriever = EnhancedSupabaseRetriever(
         client=supabase,
         embeddings=embeddings,
@@ -246,12 +249,9 @@ try:
         query_name="match_embeddings",
         k=3
     )
-    bm25 = BM25Retriever.from_texts(texts=texts, metadatas=[d.metadata for d in docs], k=3)
-    kiwi = KiwiBM25Retriever.from_texts(texts=texts, metadatas=[d.metadata for d in docs], k=3)
-    
     hybrid_retriever = EnhancedEnsembleRetriever(
-        retrievers=[bm25, kiwi, vector_retriever],
-        weights=[0.2, 0.3, 0.8]
+        retrievers=[bm25, vector_retriever],
+        weights=[0.3, 0.7]
     )
 except Exception as e:
     st.error(f'하이브리드 검색기 초기화 오류: {e}')
@@ -261,14 +261,14 @@ except Exception as e:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# 대화 메모리 초기화
+# 대화 메모리
 memory = ConversationBufferMemory(
     memory_key="chat_history",
     return_messages=True,
     output_key="answer"
 )
 
-# 대화형 검색 체인 생성
+# Conversational Retrieval Chain
 qa_chain = ConversationalRetrievalChain.from_llm(
     llm=llm,
     retriever=hybrid_retriever,
@@ -278,19 +278,10 @@ qa_chain = ConversationalRetrievalChain.from_llm(
     combine_docs_chain_kwargs={'prompt': QA_PROMPT}
 )
 
-# 메인 제목
+# 메인 타이틀
 st.markdown("""
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap" rel="stylesheet">
-
-<h2 style='
-    text-align: center;
-    font-family: "Rubik", sans-serif;
-    color: #FDFDFD;
-    font-size: 36px;
-    font-weight: 500;
-    margin-top: 1rem;
-    margin-bottom: 1.5rem;
-'>
+<h2 style='text-align: center; font-family: "Rubik", sans-serif; color: #FDFDFD; font-size: 36px; font-weight: 500; margin-top: 1rem; margin-bottom: 1.5rem;'>
     Noy와 함께 우아당탕 프랑스어 🇫🇷
 </h2>
 """, unsafe_allow_html=True)
@@ -300,7 +291,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 사용자 입력 처리
+# 사용자 입력
 if prompt := st.chat_input("편하게 질문해. 나 한국어도 잘해."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
