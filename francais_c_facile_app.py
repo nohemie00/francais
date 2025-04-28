@@ -211,7 +211,14 @@ class EnhancedSupabaseRetriever:
         return self.invoke(query)
 
 # --- 강화된 하이브리드 검색기 (BaseRetriever 상속) ---
+from langchain.schema import BaseRetriever
+from typing import List, Any
+
 class EnhancedEnsembleRetriever(BaseRetriever):
+    retrievers: List[Any]
+    weights: List[float]
+    verbose: bool = False
+
     def __init__(self, retrievers, weights=None, verbose=False):
         super().__init__()
         self.retrievers = retrievers
@@ -241,6 +248,7 @@ class EnhancedEnsembleRetriever(BaseRetriever):
 
     def get_relevant_documents(self, query):
         return self.invoke(query)
+
 
 # --- 검색기 구성 ---
 try:
