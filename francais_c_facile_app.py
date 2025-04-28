@@ -12,10 +12,9 @@ from langchain.memory import ConversationBufferMemory
 from supabase import create_client
 from langchain.chains import ConversationalRetrievalChain
 from langchain.prompts import PromptTemplate
-from langchain.schema import HumanMessage, AIMessage, SystemMessage
+from langchain.schema import HumanMessage, AIMessage, SystemMessage, Document
 from langchain_community.retrievers import BM25Retriever
-from langchain_teddynote.retrievers import KiwiBM25Retriever
-from langchain.schema import Document
+from langchain.schema import BaseRetriever
 import uuid
 
 # Streamlit 페이지 설정
@@ -75,11 +74,11 @@ st.markdown("""
 with st.sidebar:
     st.markdown("<h2 style='color:#4F8BF9;'>🧑‍🏫 Prof. Francais FR</h2>", unsafe_allow_html=True)
     st.markdown("""
-    - ✅ 문법 교정  
-    - ✅ 발음 설명  
-    - ✅ 회화 연습  
-    - ✅ 문화 설명  
-    - ✅ 고급 불어
+    ✅ 문법 교정  
+    ✅ 발음 설명  
+    ✅ 회화 연습  
+    ✅ 문화 설명  
+    ✅ 고급 표현
     """)
     if st.button("💬 대화 초기화"):
         st.session_state.messages = []
@@ -171,7 +170,7 @@ QA_PROMPT = PromptTemplate.from_template("""
 
 답변:""")
 
-# Supabase 데이터 불러오기
+# --- Supabase 데이터 로딩 ---
 try:
     resp = supabase.table("embeddings").select("content,metadata").execute()
     docs = [Document(page_content=item["content"], metadata=item.get("metadata", {})) for item in resp.data]
@@ -180,7 +179,7 @@ except Exception as e:
     st.error(f'Supabase 데이터 불러오기 오류: {e}')
     st.stop()
 
-# Supabase 벡터 검색기
+# --- 강화된 Supabase 검색기 ---
 class EnhancedSupabaseRetriever:
     def __init__(self, client, embeddings, table_name="embeddings", query_name="match_embeddings", k=3):
         self.client = client
@@ -211,9 +210,10 @@ class EnhancedSupabaseRetriever:
     def get_relevant_documents(self, query):
         return self.invoke(query)
 
-# 하이브리드 검색기
-class EnhancedEnsembleRetriever:
+# --- 강화된 하이브리드 검색기 (BaseRetriever 상속) ---
+class EnhancedEnsembleRetriever(BaseRetriever):
     def __init__(self, retrievers, weights=None, verbose=False):
+        super().__init__()
         self.retrievers = retrievers
         if weights is None:
             weights = [1.0 / len(retrievers) for _ in retrievers]
@@ -225,7 +225,7 @@ class EnhancedEnsembleRetriever:
         all_docs = []
         for i, retriever in enumerate(self.retrievers):
             try:
-                docs = retriever.invoke(query)
+                docs = retriever.get_relevant_documents(query)
                 for j, doc in enumerate(docs):
                     if not doc.metadata:
                         doc.metadata = {}
@@ -236,10 +236,13 @@ class EnhancedEnsembleRetriever:
                 continue
         return sorted(all_docs, key=lambda d: d.metadata.get("score", 0), reverse=True)[:3]
 
+    def _get_relevant_documents(self, query):
+        return self.invoke(query)
+
     def get_relevant_documents(self, query):
         return self.invoke(query)
 
-# 검색기 구성
+# --- 검색기 구성 ---
 try:
     bm25 = BM25Retriever.from_texts(texts=texts, metadatas=[d.metadata for d in docs], k=3)
     vector_retriever = EnhancedSupabaseRetriever(
@@ -257,18 +260,17 @@ except Exception as e:
     st.error(f'하이브리드 검색기 초기화 오류: {e}')
     st.stop()
 
-# 대화 이력 초기화
+# --- 대화 이력 초기화 ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# 대화 메모리
 memory = ConversationBufferMemory(
     memory_key="chat_history",
     return_messages=True,
     output_key="answer"
 )
 
-# Conversational Retrieval Chain
+# --- Conversational Retrieval Chain 생성 ---
 qa_chain = ConversationalRetrievalChain.from_llm(
     llm=llm,
     retriever=hybrid_retriever,
@@ -278,7 +280,7 @@ qa_chain = ConversationalRetrievalChain.from_llm(
     combine_docs_chain_kwargs={'prompt': QA_PROMPT}
 )
 
-# 메인 타이틀
+# --- 메인 타이틀 ---
 st.markdown("""
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap" rel="stylesheet">
 <h2 style='text-align: center; font-family: "Rubik", sans-serif; color: #FDFDFD; font-size: 36px; font-weight: 500; margin-top: 1rem; margin-bottom: 1.5rem;'>
@@ -286,12 +288,11 @@ st.markdown("""
 </h2>
 """, unsafe_allow_html=True)
 
-# 채팅 인터페이스
+# --- 채팅 인터페이스 ---
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 사용자 입력
 if prompt := st.chat_input("편하게 질문해. 나 한국어도 잘해."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
