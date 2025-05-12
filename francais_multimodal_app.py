@@ -3,7 +3,7 @@ import json, re, ast, uuid, traceback
 import numpy as np
 from typing import List, Any, Optional
 from supabase import create_client
-from langchain.schema import Document, BaseRetriever
+from langchain.schema import Document
 from langchain_community.vectorstores.supabase import SupabaseVectorStore
 from langchain_community.retrievers import BM25Retriever
 from langchain_cohere import CohereEmbeddings
@@ -13,6 +13,8 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
 import os
+from langchain_core.retrievers import BaseRetriever
+from pydantic import BaseModel, Field
 
 # .env 파일 로드
 load_dotenv()
@@ -93,6 +95,38 @@ if not all([OPENAI_API_KEY, COHERE_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_
     st.warning("❗ 모든 API 키와 주소를 입력해주세요.")
     st.stop()
 
+# EnsembleRetriever 클래스 정의 (Pydantic v2 스타일)
+class EnsembleRetriever(BaseRetriever, BaseModel):
+    retrievers: List[Any] = Field(description="List of retrievers to ensemble")
+    weights: List[float] = Field(description="Weights for each retriever")
+    
+    retriever_names: List[str] = ["BM25", "Vector"]
+
+    def _get_relevant_documents(self, query):
+        all_docs = []
+        for i, r in enumerate(self.retrievers):
+            try:
+                docs = r.get_relevant_documents(query)
+                for j, d in enumerate(docs):
+                    d.metadata = d.metadata or {}
+                    d.metadata.update({
+                        "source": self.retriever_names[i],
+                        "rank": j,
+                        "score": 1 / (1 + j) * self.weights[i]
+                    })
+                    all_docs.append(d)
+            except:
+                pass
+        seen, final = set(), []
+        for d in sorted(all_docs, key=lambda x: x.metadata.get("score", 0), reverse=True):
+            h = hash(d.page_content)
+            if h not in seen:
+                seen.add(h)
+                final.append(d)
+            if len(final) >= 5:
+                break
+        return final
+
 # --- 리소스 초기화 ---
 @st.cache_resource(show_spinner=False)
 def init():
@@ -134,52 +168,6 @@ def init():
         def get_relevant_documents(self, query):
             return self.invoke(query)
 
-    vector_retriever = SupabaseRetriever()
-
-from langchain_core.pydantic_v1 import Field
-from langchain_core.retrievers import BaseRetriever
-
-class EnsembleRetriever(BaseRetriever):
-    retrievers: List[Any] = Field(...)
-    weights: List[float] = Field(...)
-    
-    retriever_names = ["BM25", "Vector"]
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    def _get_relevant_documents(self, query):
-        all_docs = []
-        for i, r in enumerate(self.retrievers):
-            try:
-                docs = r.get_relevant_documents(query)
-                for j, d in enumerate(docs):
-                    d.metadata = d.metadata or {}
-                    d.metadata.update({
-                        "source": self.retriever_names[i],
-                        "rank": j,
-                        "score": 1 / (1 + j) * self.weights[i]
-                    })
-                    all_docs.append(d)
-            except:
-                pass
-        seen, final = set(), []
-        for d in sorted(all_docs, key=lambda x: x.metadata.get("score", 0), reverse=True):
-            h = hash(d.page_content)
-            if h not in seen:
-                seen.add(h)
-                final.append(d)
-            if len(final) >= 5:
-                break
-        return final
-        
-# 아래는 반드시 함수로 감싸야 함!
-def init():
-    # 이 안에서 필요한 설정들 진행
-    client = ...
-    embeddings = ...
-    llm = ...
-    bm25 = ...
     vector_retriever = SupabaseRetriever()
 
     hybrid = EnsembleRetriever(retrievers=[bm25, vector_retriever], weights=[0.3, 0.7])
