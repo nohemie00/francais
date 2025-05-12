@@ -167,8 +167,18 @@ class EnsembleRetriever(BaseRetriever):
             if len(final) >= 5:
                 break
         return final
+        
+# 아래는 반드시 함수로 감싸야 함!
+def init():
+    # 이 안에서 필요한 설정들 진행
+    client = ...
+    embeddings = ...
+    llm = ...
+    bm25 = ...
+    vector_retriever = SupabaseRetriever()
 
     hybrid = EnsembleRetriever(retrievers=[bm25, vector_retriever], weights=[0.3, 0.7])
+
     return client, embeddings, llm, hybrid
 
 client, embeddings, llm, hybrid_retriever = init()
