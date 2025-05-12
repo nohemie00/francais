@@ -136,7 +136,7 @@ def init():
 
     vector_retriever = SupabaseRetriever()
 
-from pydantic import Field
+from langchain_core.pydantic_v1 import Field
 from langchain_core.retrievers import BaseRetriever
 
 class EnsembleRetriever(BaseRetriever):
