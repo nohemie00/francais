@@ -17,8 +17,70 @@ import os
 # .env 파일 로드
 load_dotenv()
 
-# --- Streamlit 설정 ---
-st.set_page_config(page_title="Prof. Français", page_icon="🇫🇷", layout="wide")
+# Streamlit 페이지 설정
+st.set_page_config(
+    page_title="France Curator Mme.Noy",
+    page_icon="🇫🇷",
+    layout="wide"
+)
+
+# 스타일 커스터마이징 (배경 파랑 + 글자 흰색)
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #0047AB;
+        color: white;
+    }
+    .stMarkdown p, .stTextInput > div > div > input {
+        color: white !important;
+    }
+    .stTextInput > div > div {
+        background-color: #0055cc !important;
+    }
+    .stChatMessage {
+        background-color: #0055cc;
+        color: white;
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    .stChatInputContainer {
+        background-color: #003b7a;
+        padding: 1rem;
+        border-radius: 10px;
+    }
+    button[kind="primary"] {
+        background-color: #FF4B4B;
+        color: white;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# 커버 이미지
+st.image("https://raw.githubusercontent.com/nohemie00/francais/main/assets/FRANCAIS_.png", use_container_width=True)
+
+# 사이드바 문장 색상 커스터마이징
+st.markdown("""
+    <style>
+    .css-1d391kg p.sidebar-highlight {
+        color: #B8D8FF !important;
+        font-size: 16px;
+        line-height: 1.6;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# 사이드바 내용
+with st.sidebar:
+    st.markdown("<h2 style='color:#4F8BF9;'>🧑‍🏫 Curator AI: FR</h2>", unsafe_allow_html=True)
+    st.markdown("""
+    - 프랑스어 문법/회화/고급표현
+    - 프랑스 박물관 큐레이션
+    - 프랑스 문화/역사/예술
+    - 프랑스에 대한 모든 것
+    """)
+    if st.button("💬 대화 초기화"):
+        st.session_state.messages = []
 
 with st.sidebar:
     st.header("🔑 API 설정")
@@ -26,13 +88,11 @@ with st.sidebar:
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     COHERE_API_KEY = os.getenv("COHERE_API_KEY")
     SUPABASE_URL = os.getenv("SUPABASE_URL")
-    SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-    if st.button("💬 대화 초기화"):
-        st.session_state.messages = []
 
 # --- 초기화 실패 시 중단 ---
-if not all([OPENAI_API_KEY, COHERE_API_KEY, SUPABASE_URL, SUPABASE_KEY]):
+if not all([OPENAI_API_KEY, COHERE_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY]):
     st.warning("❗ 모든 API 키와 주소를 입력해주세요.")
     st.stop()
 
