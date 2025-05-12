@@ -2,6 +2,8 @@ streamlit
 langchain
 langchain-community
 langchain-openai
+langchain-core
+langchain-cohere
 openai
 supabase
 pymupdf
