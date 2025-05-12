@@ -26,7 +26,7 @@ SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
 # Streamlit 페이지 설정
 st.set_page_config(
-    page_title="France Curator Mme.Noy",
+    page_title="French Curator Mme.Noy",
     page_icon="🇫🇷",
     layout="wide"
 )
@@ -79,7 +79,7 @@ st.markdown("""
 
 # 사이드바 내용
 with st.sidebar:
-    st.markdown("<h2 style='color:#4F8BF9;'>🧑‍🏫 Curator AI: FR</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#4F8BF9;'>🧑‍🏫 Curator AI: French Edition</h2>", unsafe_allow_html=True)
     st.markdown("""
     - 프랑스어 문법/회화/고급표현
     - 프랑스 박물관 큐레이션
@@ -253,7 +253,7 @@ qa_chain = ConversationalRetrievalChain.from_llm(
 )
 
 # --- UI ---
-st.markdown("## 🇫🇷 Curator AI French Edition")
+st.markdown(""## Curator AI 🇫🇷")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
