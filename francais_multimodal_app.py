@@ -17,6 +17,11 @@ import os
 # .env 파일 로드
 load_dotenv()
 
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+COHERE_API_KEY = os.getenv("COHERE_API_KEY")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
 # Streamlit 페이지 설정
 st.set_page_config(
     page_title="France Curator Mme.Noy",
