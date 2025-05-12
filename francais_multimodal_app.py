@@ -253,7 +253,7 @@ qa_chain = ConversationalRetrievalChain.from_llm(
 )
 
 # --- UI ---
-st.markdown(""## Curator AI 🇫🇷"")
+st.markdown("## Curator AI 🇫🇷")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
