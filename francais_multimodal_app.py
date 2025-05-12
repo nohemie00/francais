@@ -82,14 +82,6 @@ with st.sidebar:
     if st.button("💬 대화 초기화"):
         st.session_state.messages = []
 
-with st.sidebar:
-    st.header
-    # API 키를 환경 변수에서 가져오기
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    COHERE_API_KEY = os.getenv("COHERE_API_KEY")
-    SUPABASE_URL = os.getenv("SUPABASE_URL")
-    SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-
 
 # --- 초기화 실패 시 중단 ---
 if not all([OPENAI_API_KEY, COHERE_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY]):
@@ -139,32 +131,42 @@ def init():
 
     vector_retriever = SupabaseRetriever()
 
-    class EnsembleRetriever(BaseRetriever):
-        retrievers: List[Any]
-        weights: List[float]
-        retriever_names = ["BM25", "Vector"]
-        def _get_relevant_documents(self, query):
-            all_docs = []
-            for i, r in enumerate(self.retrievers):
-                try:
-                    docs = r.get_relevant_documents(query)
-                    for j, d in enumerate(docs):
-                        d.metadata = d.metadata or {}
-                        d.metadata.update({
-                            "source": self.retriever_names[i],
-                            "rank": j,
-                            "score": 1 / (1 + j) * self.weights[i]
-                        })
-                        all_docs.append(d)
-                except: pass
-            seen, final = set(), []
-            for d in sorted(all_docs, key=lambda x: x.metadata.get("score", 0), reverse=True):
-                h = hash(d.page_content)
-                if h not in seen:
-                    seen.add(h)
-                    final.append(d)
-                if len(final) >= 5: break
-            return final
+from pydantic import Field
+from langchain_core.retrievers import BaseRetriever
+
+class EnsembleRetriever(BaseRetriever):
+    retrievers: List[Any] = Field(...)
+    weights: List[float] = Field(...)
+    
+    retriever_names = ["BM25", "Vector"]
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def _get_relevant_documents(self, query):
+        all_docs = []
+        for i, r in enumerate(self.retrievers):
+            try:
+                docs = r.get_relevant_documents(query)
+                for j, d in enumerate(docs):
+                    d.metadata = d.metadata or {}
+                    d.metadata.update({
+                        "source": self.retriever_names[i],
+                        "rank": j,
+                        "score": 1 / (1 + j) * self.weights[i]
+                    })
+                    all_docs.append(d)
+            except:
+                pass
+        seen, final = set(), []
+        for d in sorted(all_docs, key=lambda x: x.metadata.get("score", 0), reverse=True):
+            h = hash(d.page_content)
+            if h not in seen:
+                seen.add(h)
+                final.append(d)
+            if len(final) >= 5:
+                break
+        return final
 
     hybrid = EnsembleRetriever(retrievers=[bm25, vector_retriever], weights=[0.3, 0.7])
     return client, embeddings, llm, hybrid
