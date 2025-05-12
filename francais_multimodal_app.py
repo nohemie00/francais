@@ -83,7 +83,7 @@ with st.sidebar:
         st.session_state.messages = []
 
 with st.sidebar:
-    st.header("🔑 API 설정")
+    st.header
     # API 키를 환경 변수에서 가져오기
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     COHERE_API_KEY = os.getenv("COHERE_API_KEY")
